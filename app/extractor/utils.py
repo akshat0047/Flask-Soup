@@ -6,31 +6,36 @@ import json
 
 
 def domain(d):
-    domain = d.split("//")[1].split("/")[0]
+    domain = d.split("//")[1]
+    if domain.split('/'):
+        domain = domain.split('/')[0]
     return domain
 
 
+url_list = []
+fail = []
+
+
 class Scraper:
-    url_list = []
-    fail = []
 
     def get_links(self, url, p, dom):
-        self.page = requests.get(url)
+        global url_list
+        page = requests.get(url)
         time.sleep(1)
-        if self.page.status_code == 200:
-            if "text/html" in self.page.headers["Content-Type"]:
-                self.soup = BeautifulSoup(self.page.content, "html5lib")
-                self.links = self.soup.findAll('a')
-                for link in self.links:
+        if page.status_code == 200:
+            if "text/html" in page.headers["Content-Type"]:
+                soup = BeautifulSoup(page.content, "html5lib")
+                links = soup.findAll('a')
+                for link in links:
                     if "href" in link.attrs.keys():
                         urlf = link['href']
-                        if "http" not in urlf:
+                        if urlf.find("http", 0, 5) == -1:
                             if urlf.split('/')[0] == '':
                                 urlf = urlf[1:]
                                 urlf = p + "//" + dom + "/" + urlf
                             else:
                                 urlf = p + "//" + dom + "/" + urlf
-
+                        print(urlf)
                         domainanalyze = domain(urlf).split(".")
                         if len(domainanalyze) == 3:
                             subdomain = domainanalyze[0]
@@ -61,41 +66,51 @@ class Scraper:
                         elif urlf == 'https://':
                             pass
                         else:
-                            if urlf not in self.url_list and urlf.split('.')[-1] not in []:
-                                self.url_list.append(urlf)
+                            if urlf not in url_list:
+                                url_list.append(urlf)
 
             else:
                 pass
         else:
-            self.fail.append(url)
+            fail.append(url)
             time.sleep(2)
             pass
 
     def extract_domain_links(self, url):
-        self.url_list.append(url)
-        dom = domain(self.url_list[0])
-        for i in self.url_list:
+        global url_list
+        global fail
+        url_list = []
+        fail = []
+        url_list.append(url)
+        dom = domain(url_list[0])
+        print(url)
+        for i in url_list:
             Scraper().get_links(i, i.split("//")[0], dom)
         time.sleep(2)
-        self.url_list = list(dict.fromkeys(self.url_list))
-        self.fail = list(dict.fromkeys(self.fail))
+        url_list = list(dict.fromkeys(url_list))
+        fail = list(dict.fromkeys(fail))
+        print(url_list)
         time.sleep(2)
 
-        for i in self.fail:
-            if i in self.url_list:
-                self.url_list.remove(i)
+        for i in fail:
+            if i in url_list:
+                url_list.remove(i)
 
-        return {"links": self.url_list, "fail": self.fail}
+        return {"links": url_list, "fail": fail}
 
     def extract_page_links(self, url):
-        self.url_list.append(url)
-        dom = domain(self.url_list[0])
+        global url_list
+        global fail
+        url_list = []
+        fail = []
+        url_list.append(url)
+        dom = domain(url_list[0])
         Scraper().get_links(url, url.split("//")[0], dom)
         time.sleep(2)
-        self.url_list = list(dict.fromkeys(self.url_list))
-        self.fail = list(dict.fromkeys(self.fail))
+        url_list = list(dict.fromkeys(url_list))
+        fail = list(dict.fromkeys(fail))
 
-        for i in self.fail:
-            if i in self.url_list:
-                self.url_list.remove(i)
-        return {"links": self.url_list, "fail": self.fail}
+        for i in fail:
+            if i in url_list:
+                url_list.remove(i)
+        return {"links": url_list, "fail": fail}

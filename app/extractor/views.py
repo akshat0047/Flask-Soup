@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, flash, Blueprint, url_for, jsonify
 from app.extractor.forms import ApiForm
 from app.extractor.tasks import api_links, api_alld, api_allr, api_selected, domain, api_linksd
+from app.extractor.utils import Scraper
 import requests
 
 
@@ -33,7 +34,7 @@ def home():
         choice = request.form['Extract']
         print(choice)
         if choice == 'sp':
-            return api_selected(url=link)
+            return api_selected(link)
 
         if choice == 'lop':
             return api_links(url=link)
@@ -47,6 +48,19 @@ def home():
     elif request.method == 'GET':
         print("here")
         return render_template('extractor/index.html', form=form)
+
+
+@extract.after_request
+def add_header(r):
+    """
+    Add headers to both force latest IE rendering engine or Chrome Frame,
+    and also to cache the rendered page for 10 minutes.
+    """
+    r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    r.headers["Pragma"] = "no-cache"
+    r.headers["Expires"] = "0"
+    r.headers['Cache-Control'] = 'public, max-age=0'
+    return r
 
 
 @api.route('/', methods=['GET', 'POST'])

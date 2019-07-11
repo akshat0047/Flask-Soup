@@ -11,13 +11,14 @@ import os
 
 
 def domain(d):
-    domain = d.split("//")[1].split("/")[0]
+    domain = d.split("//")[1]
+    if domain.split('/'):
+        domain = domain.split('/')[0]
     return domain
 
 # ALL LINKS ON A PAGE
 
 
-@celery.task
 def api_links(url=''):
     if 'url' in request.args:
         url = str(request.args['url'])
